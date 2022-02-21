@@ -66,6 +66,7 @@ public:
 	void Run();
 	void Exit();
 	static bool IsKeyPressed(unsigned short key);
+	static bool IsKeyReleased(unsigned short key);
 	static void AddEvidence(string text);
 
 private:

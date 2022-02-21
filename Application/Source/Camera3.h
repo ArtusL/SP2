@@ -2,11 +2,11 @@
 #define CAMERA3_H
 
 #include "Camera.h"
-
 class Camera3 : public Camera
 {
 private:
 	bool enableControl;
+
 public:
 	float rotateMod;
 

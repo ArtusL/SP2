@@ -188,6 +188,28 @@ void RoomScene::RenderTextOnScreen(Mesh* mesh, std::string text, Color color, fl
 	glEnable(GL_DEPTH_TEST);
 }
 
+void RoomScene::RenderObjectOnScreen(Mesh* mesh, float x, float y, float sizex, float sizey, float rotatez, float rotatex)
+{
+	glDisable(GL_DEPTH_TEST);
+	Mtx44 ortho;
+	ortho.SetToOrtho(0, 80, 0, 60, -10, 10); //size of screen UI
+	projectionStack.PushMatrix();
+	projectionStack.LoadMatrix(ortho);
+	viewStack.PushMatrix();
+	viewStack.LoadIdentity(); //No need camera for ortho mode
+	modelStack.PushMatrix();
+	modelStack.LoadIdentity(); //Reset modelStack
+	modelStack.Translate(x, y, 0);
+	modelStack.Scale(sizex, sizey, 1);
+	modelStack.Rotate(rotatex, 1, 0, 0);
+	modelStack.Rotate(rotatez, 0, 1, 0);
+	RenderMesh(mesh, false);
+	projectionStack.PopMatrix();
+	viewStack.PopMatrix();
+	modelStack.PopMatrix();
+	glEnable(GL_DEPTH_TEST);
+}
+
 void RoomScene::RenderPressEToInteract()
 {
 	//RenderTextOnScreen(meshList[GEO_TEXT], "Press E to interact", Color(1, 1, 1), 3, 13.5, 10);
@@ -559,6 +581,13 @@ void RoomScene::Init()
 	meshList[GEO_TEXT] = MeshBuilder::GenerateText("text", 16, 16);
 	meshList[GEO_TEXT]->textureID = LoadTGA("Image//arial.tga");
 
+	//evidence
+
+	{
+		meshList[GEO_PILLS] = MeshBuilder::GenerateOBJMTL("Pills", "OBJ//pill.obj", "OBJ//pill.mtl");
+		meshList[GEO_PILLS]->textureID = LoadTGA("Image//PolygonCity_Texture_02_B.tga");
+	}
+
 	//Skybox
 	{
 		meshList[GEO_FRONT] = MeshBuilder::GenerateQuad("front", Color(1, 1, 1), 1.f);
@@ -713,6 +742,23 @@ void RoomScene::Update(double dt)
 			jButtonState = true;
 		}
 	}
+	//rotate item
+	if (Application::IsKeyPressed(VK_UP))
+	{
+		rotateX += 90 * dt;
+	}
+	else if (Application::IsKeyPressed(VK_DOWN))
+	{
+		rotateX -= 90 * dt;
+	}
+	if (Application::IsKeyPressed(VK_LEFT))
+	{
+		rotateZ += 110 * dt;
+	}
+	else if (Application::IsKeyPressed(VK_RIGHT))
+	{
+		rotateZ -= 110 * dt;
+	}
 
 	//Check Door Interaction Collision
 	if ((IsInDoorLInteraction() || IsInDoorRInteraction())
@@ -816,6 +862,112 @@ void RoomScene::Render()
 			modelStack.Scale(1, 1, 1);
 			RenderMesh(meshList[GEO_ROOM1_FURNITURE], true);
 			modelStack.PopMatrix();
+
+			//WALLS 
+			{
+				if ((camera.position.z >= 3.8) && (camera.position.x <= 5) && (camera.position.x >= -5))
+				{
+					camera.position.z = 3.8;
+					camera.target = camera.position + camera.view;
+				}
+				if ((camera.position.z <= -3.5) && (camera.position.x <= 0) && (camera.position.x >= -5))
+				{
+					camera.position.z = -3.5;
+					camera.target = camera.position + camera.view;
+				}
+				if ((camera.position.x <= -0.05) && (camera.position.x >= 0) && (camera.position.z <= -0.2) && (camera.position.z >= -5))
+				{
+					camera.position.x = -0.05;
+					camera.target = camera.position + camera.view;
+				}
+				/*if ((camera.position.x >= 0) && (camera.position.z <= -0.2) && (camera.position.z >= -5))
+				{
+					camera.position.x = 0;
+					camera.target = camera.position + camera.view;
+				}*/
+				if ((camera.position.z <= -4.4))
+				{
+					camera.position.z = -4.4;
+					camera.target = camera.position + camera.view;
+				}
+				if ((camera.position.x >= 4.86) && (camera.position.z <= 4) && (camera.position.z >= -5))
+				{
+					camera.position.x = 4.86;
+					camera.target = camera.position + camera.view;
+				}
+				if ((camera.position.x <= -4.4) && (camera.position.z <= 4) && (camera.position.z >= -5))
+				{
+					camera.position.x = -4.4;
+					camera.target = camera.position + camera.view;
+				}
+			}
+			//inspect
+			{
+				if ((camera.position.x > -1.6 && camera.position.x < -.3 && camera.position.z < -2 && camera.position.z > -3.5))
+				{
+
+					if (Inspect == false)
+					{
+
+						if (Application::IsKeyReleased('F') && (Interacted == false))
+						{
+
+							text = true;
+							Inspect = true;
+							Interacted = true;
+							Pickup = true;
+
+
+							return;
+						}
+						else if (!Application::IsKeyReleased('F') && (Interacted == true))
+						{
+							Interacted = false;
+						}
+					}
+					else if (Inspect == true)
+					{
+
+						if (Application::IsKeyReleased('F') && (Interacted == false))
+						{
+							text = false;
+							Inspect = false;
+							Pickup = false;
+							Interacted = true;
+						}
+						else if (!Application::IsKeyReleased('F') && (Interacted == true))
+						{
+							Interacted = false;
+						}
+					}
+
+				}
+				if (Pickup == false)
+				{
+					modelStack.PushMatrix();
+					modelStack.Translate(-0.95, 0.65, -3.2);
+					modelStack.Scale(0.5, 0.5, 0.5);
+					RenderMesh(meshList[GEO_PILLS], true);
+					modelStack.PopMatrix();
+				}
+				if (text == false && camera.position.x > -1.6 && camera.position.x < -.3 && camera.position.z < -2 && camera.position.z > -3.5)
+				{
+					RenderTextOnScreen(meshList[GEO_TEXT], "Press F To Inspect", Color(1, 1, 1), 4, 6, 6);
+				}
+				else if (text == true)
+				{
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow up to turn the object Up", Color(1, 1, 1), 1.5, 0.5, 57);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow Left to turn the object Left", Color(1, 1, 1), 1.5, 0.5, 51);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow Down to turn the object Down", Color(1, 1, 1), 1.5, 0.5, 54);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow Right to turn the object Right", Color(1, 1, 1), 1.5, 0.5, 48);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Press F To Stop Inspecting", Color(1, 1, 1), 3, 2, 8);
+				}
+
+				if (Inspect == true)
+				{
+					RenderObjectOnScreen(meshList[GEO_PILLS], 40, 30, 60, 60, rotateZ, rotateX);
+				}
+			}
 		}
 
 		//Room 2 (Old Man)
@@ -831,6 +983,74 @@ void RoomScene::Render()
 			modelStack.Scale(1, 1, 1);
 			RenderMesh(meshList[GEO_ROOM2_FURNITURE], true);
 			modelStack.PopMatrix();
+
+			//inspect
+			{
+				if ((camera.position.x > -1.6 && camera.position.x < -.3 && camera.position.z < -2 && camera.position.z > -3.5))
+				{
+
+					if (Inspect == false)
+					{
+
+						if (Application::IsKeyReleased('F') && (Interacted == false))
+						{
+
+							text = true;
+							Inspect = true;
+							Interacted = true;
+							Pickup = true;
+
+
+							return;
+						}
+						else if (!Application::IsKeyReleased('F') && (Interacted == true))
+						{
+							Interacted = false;
+						}
+					}
+					else if (Inspect == true)
+					{
+
+						if (Application::IsKeyReleased('F') && (Interacted == false))
+						{
+							text = false;
+							Inspect = false;
+							Pickup = false;
+							Interacted = true;
+						}
+						else if (!Application::IsKeyReleased('F') && (Interacted == true))
+						{
+							Interacted = false;
+						}
+					}
+
+				}
+				if (Pickup == false)
+				{
+					modelStack.PushMatrix();
+					modelStack.Translate(-0.95, 0.65, -3.2);
+					modelStack.Scale(0.5, 0.5, 0.5);
+					RenderMesh(meshList[GEO_PILLS], true);
+					modelStack.PopMatrix();
+				}
+				if (text == false && camera.position.x > -1.6 && camera.position.x < -.3 && camera.position.z < -2 && camera.position.z > -3.5)
+				{
+					RenderTextOnScreen(meshList[GEO_TEXT], "Press F To Inspect", Color(1, 1, 1), 4, 6, 6);
+				}
+				else if (text == true)
+				{
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow up to turn the object Up", Color(1, 1, 1), 1.5, 0.5, 57);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow Left to turn the object Left", Color(1, 1, 1), 1.5, 0.5, 51);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow Down to turn the object Down", Color(1, 1, 1), 1.5, 0.5, 54);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Arrow Right to turn the object Right", Color(1, 1, 1), 1.5, 0.5, 48);
+					RenderTextOnScreen(meshList[GEO_TEXT], "Press F To Stop Inspecting", Color(1, 1, 1), 3, 2, 8);
+				}
+
+				if (Inspect == true)
+				{
+					RenderObjectOnScreen(meshList[GEO_PILLS], 40, 30, 60, 60, rotateZ, rotateX);
+				}
+			}
 		}
 
 		//Room 3 (Kid): WIP

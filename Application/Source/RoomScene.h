@@ -9,7 +9,7 @@
 #include "Utility.h"
 #include "LoadTGA.h"
 #include "Entity.h"
-
+extern bool Inspect;
 class RoomScene : public Scene
 {
 private:
@@ -40,6 +40,7 @@ private:
 		GEO_ROOM2_FURNITURE,	//Right 1
 		GEO_ROOM3_FURNITURE,	//Left 2
 		GEO_ROOM4_FURNITURE,	//Right2
+        GEO_PILLS,
 		NUM_GEOMETRY,
 	};
 
@@ -97,6 +98,11 @@ private:
 	bool isJournalOpen;
 	char journalPage;
 	int evidencePage = 1;
+	bool Pickup = false;
+	bool Interacted = false;
+	bool text = false;
+	float rotateX = 0;
+	float rotateZ = 0;
 
 	void RenderSkybox();
 	void RenderMesh(Mesh* mesh, bool enableLight);
@@ -104,6 +110,7 @@ private:
 	void RenderMeshOnScreen(Mesh* mesh, float x, float y, float sizex, float sizey);
 	void RenderText(Mesh* mesh, std::string text, Color color);
 	void RenderTextOnScreen(Mesh* mesh, std::string text, Color color, float size, float x, float y);
+	void RenderObjectOnScreen(Mesh* mesh, float x, float y, float sizex, float sizey, float rotatez, float rotatex);
 	void RenderPressEToInteract();
 	void RenderHUD();
 	void RenderJournal();
